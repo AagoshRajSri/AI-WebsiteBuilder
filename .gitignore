@@ -1,0 +1,19 @@
+node_modules/
+dist/
+.env
+.env.local
+.env.*.local
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.vscode/
+.idea/
+.DS_Store
+# Prisma
+/server/generated/
+/server/prisma/test.prisma
+/server/prisma.config.ts.bak
+# OS files
+Thumbs.db
+db.json

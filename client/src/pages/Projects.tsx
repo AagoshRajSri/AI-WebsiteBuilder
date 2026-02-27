@@ -11,7 +11,7 @@ import {
   TabletIcon,
   XIcon,
 } from "lucide-react";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import type { Project } from "../types";
 import Sidebar from "../components/Sidebar";
@@ -37,7 +37,8 @@ const Projects = () => {
 
   const previewRef = useRef<ProjectPreviewRef>(null);
 
-  const fetchProject = async () => {
+  const fetchProject = useCallback(async () => {
+    if (!projectId) return;
     try {
       const { data } = await api.get(`/api/user/project/${projectId}`);
       setProject(data.project);
@@ -49,7 +50,7 @@ const Projects = () => {
       toast.error(error?.response?.data?.message || error.message);
       console.log(error);
     }
-  };
+  }, [projectId]);
 
   const saveProject = async () => {
     try {
@@ -101,14 +102,14 @@ const Projects = () => {
       navigate("/");
       toast("Please login to view your projects");
     }
-  }, [session?.user]);
+  }, [session?.user, isPending, navigate, fetchProject]);
 
   useEffect(() => {
     if (project && !project.current_code) {
       const intervalId = setInterval(fetchProject, 10000);
       return () => clearInterval(intervalId);
     }
-  }, [project]);
+  }, [project, fetchProject]);
 
   if (loading) {
     return (

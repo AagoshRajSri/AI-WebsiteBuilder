@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Loader2Icon } from "lucide-react";
 import ProjectPreview from "../components/ProjectPreview";
 import type { Project } from "../types";
@@ -11,7 +11,8 @@ const View = () => {
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(true);
 
-  const fetchCode = async () => {
+  const fetchCode = useCallback(async () => {
+    if (!projectId) return;
     try {
       const { data } = await api.get(`/api/project/published/${projectId}`);
       if (data.code) {
@@ -25,13 +26,11 @@ const View = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [projectId]);
 
   useEffect(() => {
-    if (projectId) {
-      fetchCode();
-    }
-  }, [projectId]);
+    fetchCode();
+  }, [fetchCode]);
 
   if (loading) {
     return (

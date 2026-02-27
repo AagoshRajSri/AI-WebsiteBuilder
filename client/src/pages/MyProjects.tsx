@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { Project } from "../types";
 import { Loader2Icon, PlusIcon, TrashIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -13,7 +13,7 @@ const MyProjects = () => {
   const navigate = useNavigate();
   const { data: session } = authClient.useSession();
 
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
     try {
       const { data } = await api.get("/api/user/projects");
       setProjects(data.projects || []);
@@ -23,7 +23,7 @@ const MyProjects = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const deleteProject = async (projectId: string) => {
     try {
@@ -40,7 +40,7 @@ const MyProjects = () => {
     if (session?.user) {
       fetchProjects();
     }
-  }, [session?.user]);
+  }, [session?.user, fetchProjects]);
 
   return (
     <>

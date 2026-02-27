@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Loader2Icon } from "lucide-react";
 import ProjectPreview from "../components/ProjectPreview";
@@ -7,11 +7,12 @@ import api from "@/configs/axios";
 import { toast } from "sonner";
 
 const Preview = () => {
-  const { projectId, versionId: _versionId } = useParams();
+  const { projectId } = useParams();
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(true);
 
-  const fetchCode = async () => {
+  const fetchCode = useCallback(async () => {
+    if (!projectId) return;
     try {
       const { data } = await api.get(`/api/project/preview/${projectId}`);
       const project = data.project;
@@ -26,13 +27,11 @@ const Preview = () => {
     } finally {
       setLoading(false);
     }
-  };
-  
-  useEffect(() => {
-    if (projectId) {
-      fetchCode();
-    }
   }, [projectId]);
+
+  useEffect(() => {
+    fetchCode();
+  }, [fetchCode]);
 
   if (loading) {
     return (

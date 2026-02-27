@@ -6,7 +6,7 @@ const Loading = () => {
     setTimeout(() => {
       window.location.href = "/";
     }, 6000);
-  });
+  }, []);
 
   return (
     <div className="h-screen flex flex-col">

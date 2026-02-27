@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { Project } from "../types";
 import { Loader2Icon } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
@@ -11,7 +11,7 @@ const Community = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const navigate = useNavigate();
 
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
     try {
       const { data } = await api.get("/api/project/published");
       setProjects(data.projects || []);
@@ -21,11 +21,11 @@ const Community = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchProjects();
-  }, []);
+  }, [fetchProjects]);
 
   return (
     <>

@@ -1,8 +1,6 @@
 import express from "express";
 import "dotenv/config";
 import cors from "cors";
-import path from "path";
-import fs from "fs";
 import { toNodeHandler } from "better-auth/node";
 import { auth } from "./lib/auth.js";
 import userRouter from "./routes/userRoutes.js";
@@ -33,13 +31,3 @@ app.use("/api/project", projectRouter);
 app.listen(port, () => {
     console.log(`Server is running at http://localhost:${port}`);
 });
-// Serve client production build if present (optional SPA fallback)
-const clientDist = path.join(process.cwd(), "client", "dist");
-if (fs.existsSync(clientDist)) {
-    // Serve static assets
-    app.use(express.static(clientDist));
-    // Fallback to index.html for SPA routes
-    app.get("/*", (req, res) => {
-        res.sendFile(path.join(clientDist, "index.html"));
-    });
-}

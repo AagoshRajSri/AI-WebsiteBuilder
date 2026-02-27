@@ -1,5 +1,5 @@
 import prisma from "../lib/prisma.js";
-import openai from "../config/openai.js";
+import { generateWithHF } from "../lib/huggingface.js";
 // controller fn to make revision
 export const makeRevision = async (req, res) => {
     const userId = req.userId;
@@ -41,28 +41,19 @@ export const makeRevision = async (req, res) => {
             },
         });
         // enhance user prompt
-        const promptEnhancedResponse = await openai.chat.completions.create({
-            model: "kwaipilot/kat-coder-pro:free",
-            messages: [
-                {
-                    role: "system",
-                    content: `You are a prompt enhancement specialist. The user wants to make changes to their website. Enhance their request to be more specific and actionable for a web developer.
-
+        const enhancedPrompt = await generateWithHF(`
+    You are a prompt enhancement specialist. The user wants to make changes to their website. Enhance their request to be more specific and actionable for a web developer.
+    
     Enhance this by:
     1. Being specific about what elements to change
     2. Mentioning design details (colors, spacing, sizes)
     3. Clarifying the desired outcome
     4. Using clear technical terms
-
-Return ONLY the enhanced request, nothing else. Keep it concise (1-2 sentences).`,
-                },
-                {
-                    role: "user",
-                    content: `User's request: "${message}"`,
-                },
-            ],
-        });
-        const enhancedPrompt = promptEnhancedResponse.choices[0].message.content;
+    
+    User request: "${message}"
+    
+    Enhanced request:
+    `);
         await prisma.conversation.create({
             data: {
                 role: "assistant",
@@ -71,30 +62,20 @@ Return ONLY the enhanced request, nothing else. Keep it concise (1-2 sentences).
             },
         });
         // generate website code
-        const codeGenerationResponse = await openai.chat.completions.create({
-            model: "kwaipilot/kat-coder-pro:free",
-            messages: [
-                {
-                    role: "system",
-                    content: `You are an expert web developer. 
+        const code = await generateWithHF(`
+You are an expert web developer. 
+Update the following HTML code based on the user request.
+Return ONLY the complete updated HTML code.
+No explanation text.
 
-    CRITICAL REQUIREMENTS:
-    - Return ONLY the complete updated HTML code with the requested changes.
-    - Use Tailwind CSS for ALL styling (NO custom CSS).
-    - Use Tailwind utility classes for all styling changes.
-    - Include all JavaScript in <script> tags before closing </body>
-    - Make sure it's a complete, standalone HTML document with Tailwind CSS
-    - Return the HTML Code Only, nothing else
+Current website code:
+"${currentProject.current_code}"
 
-    Apply the requested changes while maintaining the Tailwind CSS styling approach.`,
-                },
-                {
-                    role: "user",
-                    content: `Here is the current website code: "${currentProject.current_code}" The user wants this change: "${enhancedPrompt}"`,
-                },
-            ],
-        });
-        const code = codeGenerationResponse.choices[0].message.content || "";
+User request for change:
+"${enhancedPrompt}"
+
+Updated HTML Output:
+    `);
         if (!code) {
             await prisma.conversation.create({
                 data: {
@@ -234,8 +215,15 @@ export const getPublishedProjects = async (req, res) => {
         res.json({ projects });
     }
     catch (error) {
-        console.log(error.code || error.message);
-        res.status(500).json({ message: error.message });
+        const code = error?.code;
+        const message = error?.message ?? "Unknown error";
+        console.log(code || message);
+        if (code === "P1017") {
+            return res.status(503).json({
+                message: "Database connection was closed. Verify DATABASE_URL and that your Postgres provider allows SSL connections from this machine.",
+            });
+        }
+        res.status(500).json({ message });
     }
 };
 // get a single project by id
